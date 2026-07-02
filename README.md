@@ -20,7 +20,7 @@ decisions behind it.
 
 ## Demo
 
-### [▶ Watch the 99-second product demo](<media/APPlikacja(online-video-cutter.com).mp4>)
+### [▶ Watch the 99-second product demo](https://github.com/user-attachments/assets/64bc63f2-9cd4-489d-8df0-82203c616714)
 
 The recording shows the complete core flow in the Polish-language interface:
 signing in, downloading and activating legal study materials, answering
