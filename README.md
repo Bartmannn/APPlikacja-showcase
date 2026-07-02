@@ -1,6 +1,6 @@
 # APPlikacja
 
-> Mobilna aplikacja do nauki prawa poprzez krótkie, interaktywne pytania testowe.
+> An offline-first Android app for learning law through short, interactive multiple-choice questions.
 
 [![Android](https://img.shields.io/badge/Android-28%2B-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
@@ -8,69 +8,64 @@
 [![Firebase](https://img.shields.io/badge/Firebase-Auth_%7C_Storage_%7C_Firestore-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
 [![Room](https://img.shields.io/badge/Room-offline--first-2F6F61)](https://developer.android.com/training/data-storage/room)
 
-APPlikacja pomaga przygotowywać się do prawniczych egzaminów testowych. Łączy
-mechanikę pionowo przewijanych „rolek” z wiarygodnym źródłem prawnym, nauką
-offline oraz wersjonowanymi pakietami pytań pobieranymi na żądanie.
+APPlikacja helps users prepare for multiple-choice law exams. It combines a
+vertically scrolling, short-form feed with direct access to the relevant legal
+provisions, offline learning, and versioned question packages downloaded on
+demand.
 
-Projekt powstał jako natywna aplikacja Android w Kotlinie i Jetpack Compose.
-Kod źródłowy pozostaje w prywatnym repozytorium — tutaj prezentuję działający
-produkt, jego architekturę oraz najważniejsze decyzje techniczne.
+The project is a native Android application built with Kotlin and Jetpack
+Compose. Its source code remains in a private repository; this repository
+showcases the working product, its architecture, and the key technical
+decisions behind it.
 
 ## Demo
 
-<!--
-Przed publikacją:
-1. Dodaj nagranie jako media/applikacja-demo.mp4.
-2. Dodaj pionowy kadr z nagrania jako media/demo-cover.png.
-3. Najlepszą zgodność przeglądarek zapewni MP4 zakodowany jako H.264.
--->
+### [▶ Watch the 99-second product demo](<media/APPlikacja(online-video-cutter.com).mp4>)
 
-[![Obejrzyj demo APPlikacji](media/demo-cover.png)](media/applikacja-demo.mp4)
+The recording shows the complete core flow in the Polish-language interface:
+signing in, downloading and activating legal study materials, answering
+questions, checking correct and incorrect answers, opening the full source
+provision with a horizontal swipe, moving between questions, managing locally
+stored packages, switching between light and dark themes, and signing out.
 
-**[▶ Odtwórz pełne demo](media/applikacja-demo.mp4)**
+## Key features
 
-W demonstracji pokazuję logowanie, pobranie materiałów, naukę w formie rolek,
-sprawdzenie odpowiedzi oraz gest przełączający pytanie na treść właściwego
-przepisu.
+- Email and Google sign-in with Firebase Authentication
+- A materials catalog loaded dynamically from Firebase Storage
+- On-demand downloads of selected, versioned `.json.gz` question packages
+- Package integrity checks based on file size and SHA-256
+- Background decompression, validation, and transactional imports
+- A local Room database for learning without an internet connection
+- A vertical question feed built with `VerticalPager`
+- A horizontal gesture for switching between a question and its legal source
+- Local answer history and individual learning progress
+- Activation and deactivation of downloaded materials without downloading them again
+- Automatic updates for active packages
+- Light and dark Material 3 themes
+- Basic accessibility support, including TalkBack actions
 
-## Najważniejsze możliwości
-
-- logowanie przez e-mail i Google z wykorzystaniem Firebase Authentication,
-- katalog materiałów pobierany dynamicznie z Firebase Storage,
-- pobieranie wybranych, wersjonowanych pakietów pytań `.json.gz`,
-- kontrola integralności paczki przez rozmiar pliku i sumę SHA-256,
-- rozpakowanie, walidacja i transakcyjny import poza głównym wątkiem,
-- lokalna baza Room umożliwiająca naukę bez połączenia z internetem,
-- pionowy feed pytań oparty na `VerticalPager`,
-- gest poziomy przełączający kartę pytania i kartę źródła prawnego,
-- zapis odpowiedzi i indywidualnego postępu nauki,
-- aktywowanie i wyłączanie materiałów bez ponownego pobierania,
-- automatyczna aktualizacja aktywnych pakietów,
-- jasny i ciemny motyw Material 3,
-- podstawowe wsparcie dostępności, w tym akcje TalkBack.
-
-## Jak działa aplikacja
+## How it works
 
 ```mermaid
 flowchart LR
-    subgraph PUB["Przygotowanie treści"]
-        P["Parser aktów prawnych"] --> E["Lokalny edytor pytań"]
-        E --> G["Walidacja i generator manifestu"]
-        G --> Z["Pakiety .json.gz<br/>+ manifest.json"]
+    subgraph PUB["Content preparation"]
+        P["Legal document parser"] --> E["Local question editor"]
+        E --> G["Validation and manifest generator"]
+        G --> Z[".json.gz packages<br/>+ manifest.json"]
     end
 
     subgraph FB["Firebase"]
         A["Authentication"]
-        F["Firestore<br/>konto i accountTier"]
-        S["Storage<br/>manifest i pakiety"]
+        F["Firestore<br/>account and accountTier"]
+        S["Storage<br/>manifest and packages"]
     end
 
-    subgraph APP["Aplikacja Android"]
-        M["Panel Materiały"]
-        V["SHA-256, gzip<br/>i walidacja schematu"]
+    subgraph APP["Android app"]
+        M["Materials screen"]
+        V["SHA-256, gzip<br/>and schema validation"]
         R["Room"]
-        N["Nauka<br/>rolki pytań"]
-        PR["Postęp użytkownika"]
+        N["Learning<br/>question feed"]
+        PR["User progress"]
     end
 
     Z --> S
@@ -84,80 +79,76 @@ flowchart LR
     PR --> R
 ```
 
-1. Po zalogowaniu aplikacja pobiera mały `manifest.json` opisujący dostępne
-   dziedziny, wersje i lokalizacje pakietów.
-2. Użytkownik wybiera materiały, które chce zachować na urządzeniu.
-3. Aplikacja pobiera skompresowany pakiet do pliku tymczasowego i sprawdza jego
-   sumę SHA-256.
-4. Rozpakowanie, walidacja i import do Room odbywają się na `Dispatchers.IO`,
-   dzięki czemu interfejs pozostaje responsywny.
-5. Ekran Nauka losuje pytania wyłącznie z aktywnych pakietów zapisanych lokalnie.
+1. After sign-in, the app downloads a small `manifest.json` describing the
+   available legal fields, package versions, and file locations.
+2. The user selects the materials they want to keep on the device.
+3. The app downloads a compressed package to a temporary file and verifies its
+   SHA-256 checksum.
+4. Decompression, validation, and import into Room run on `Dispatchers.IO`, so
+   the interface remains responsive.
+5. The Learn screen draws questions exclusively from active packages stored
+   locally.
 
-## Interfejs
+## Interface shown in the demo
 
-<!--
-Zastąp poniższe pliki własnymi zrzutami ekranu. Najlepiej użyć obrazów o tej
-samej wysokości i przyciąć je do samego ekranu telefonu.
--->
+The app uses a three-tab bottom navigation bar for **Learn**, **Materials**, and
+**Settings**. The recording opens in a dark theme with warm cream accents and
+green status highlights, then demonstrates the light theme and returns to the
+dark theme.
 
-| Nauka | Materiały | Źródło pytania |
-| :---: | :---: | :---: |
-| ![Ekran nauki](media/learning.png) | ![Panel materiałów](media/materials.png) | ![Treść przepisu](media/source.png) |
+Each question fills one vertically scrollable card. The card displays the legal
+reference, the question, three answer options, a report action, and a short
+gesture hint. Selecting an answer provides immediate feedback: the correct
+option is highlighted in green and an incorrect selection in red. Swiping right
+opens the full text of the cited provision; swiping left returns to the question,
+and swiping up advances to the next card.
 
-### Nauka w formie rolek
+The Materials screen groups downloadable packages by area of law. Package cards
+show their version, question count, file size, and current state, including
+downloading, installing, active, and stored locally. A confirmation dialog is
+shown before a material is deactivated. The Settings screen contains account
+controls and system, light, and dark theme options.
 
-Każde pytanie zajmuje jedną pionową stronę. Po udzieleniu odpowiedzi aplikacja
-natychmiast wskazuje wynik. Przesunięcie karty w prawo odsłania pełną treść
-przepisu, z którego pochodzi pytanie, a przesunięcie w lewo wraca do testu.
-Pozwala to sprawdzić podstawę prawną bez opuszczania bieżącej rolki.
+## Architecture
 
-### Materiały dostępne offline
+The application follows an offline-first approach. Firebase is not queried for
+every question separately: the backend distributes versioned packages, while
+the learning experience runs on local data.
 
-Panel Materiały pokazuje pakiety opublikowane w zdalnym manifeście oraz ich
-aktualny stan: niepobrany, pobierany, instalowany, aktywny, nieaktywny albo
-wymagający aktualizacji. Wyłączenie materiału zwalnia miejsce w limicie konta,
-ale zachowuje dane na urządzeniu.
-
-## Architektura
-
-Aplikacja wykorzystuje podejście offline-first. Firebase nie służy do
-pobierania każdego pytania osobno — backend dystrybuuje wersjonowane paczki,
-a właściwa nauka działa na lokalnych danych.
-
-| Obszar | Rozwiązanie |
+| Area | Technology |
 | --- | --- |
-| Interfejs | Jetpack Compose, Material 3, Navigation Compose |
-| Stan UI | ViewModel, StateFlow |
-| Operacje asynchroniczne | Kotlin Coroutines, `Dispatchers.IO` |
-| Lokalna baza | Room |
-| Uwierzytelnianie | Firebase Authentication, Google Sign-In |
-| Dane konta | Cloud Firestore |
-| Dystrybucja treści | Firebase Storage, JSON, gzip, SHA-256 |
-| Budowanie | Gradle Kotlin DSL |
-| Testy | JUnit, testy parserów i polityk, Compose UI tests |
+| UI | Jetpack Compose, Material 3, Navigation Compose |
+| UI state | ViewModel, StateFlow |
+| Asynchronous work | Kotlin Coroutines, `Dispatchers.IO` |
+| Local database | Room |
+| Authentication | Firebase Authentication, Google Sign-In |
+| Account data | Cloud Firestore |
+| Content distribution | Firebase Storage, JSON, gzip, SHA-256 |
+| Build system | Gradle Kotlin DSL |
+| Testing | JUnit, parser and policy tests, Compose UI tests |
 
-### Przepływ stanu materiału
+### Material state flow
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Niepobrany
-    Niepobrany --> Pobieranie: wybór pakietu
-    Pobieranie --> Weryfikacja: pobrano plik
-    Weryfikacja --> Import: SHA-256 i schemat poprawne
-    Weryfikacja --> Błąd: plik niepoprawny
-    Import --> Aktywny: transakcja zakończona
-    Import --> Błąd: import nieudany
-    Błąd --> Pobieranie: ponów
-    Aktywny --> Nieaktywny: wyłącz
-    Nieaktywny --> Aktywny: aktualna wersja
-    Nieaktywny --> Pobieranie: dostępna aktualizacja
+    [*] --> NotDownloaded
+    NotDownloaded --> Downloading: select package
+    Downloading --> Verification: file downloaded
+    Verification --> Import: valid SHA-256 and schema
+    Verification --> Error: invalid file
+    Import --> Active: transaction complete
+    Import --> Error: import failed
+    Error --> Downloading: retry
+    Active --> Inactive: deactivate
+    Inactive --> Active: current version
+    Inactive --> Downloading: update available
 ```
 
-## Lokalny model danych
+## Local data model
 
-Room przechowuje zarówno wersjonowaną treść prawną, jak i lokalny postęp
-użytkownika. Pakiet jest importowany jako jeden dokument, dlatego aktualizacja
-nie usuwa pozostałych dziedzin ani historii odpowiedzi.
+Room stores both versioned legal content and local user progress. Each package
+is imported as a single document, so updating it does not remove other legal
+fields or the user's answer history.
 
 ```mermaid
 erDiagram
@@ -249,82 +240,73 @@ erDiagram
     }
 ```
 
-## Najciekawsze decyzje techniczne
+## Notable technical decisions
 
-### Paczki zamiast wielu odczytów
+### Packages instead of many individual reads
 
-Treść pytań nie jest pobierana z Firestore rekord po rekordzie. Mały manifest
-opisuje dostępne materiały, a Firebase Storage dostarcza skompresowane pakiety.
-Ogranicza to liczbę operacji sieciowych, ułatwia kontrolę kosztów i pozwala
-korzystać z aplikacji offline.
+Questions are not fetched from Firestore one record at a time. A small manifest
+describes the available materials, while Firebase Storage serves compressed
+packages. This reduces network operations, makes costs easier to control, and
+enables offline use.
 
-### Bezpieczna aktualizacja treści
+### Safe content updates
 
-Nowa wersja trafia najpierw do pliku tymczasowego. Dopiero po sprawdzeniu
-rozmiaru, SHA-256, gzip i schematu jest zapisywana transakcyjnie. Poprzednia
-wersja pozostaje użyteczna, jeśli pobranie lub walidacja się nie powiedzie.
+A new version is first downloaded to a temporary file. It is written
+transactionally only after its size, SHA-256 checksum, gzip structure, and
+schema have been verified. The previous version remains usable if a download or
+validation fails.
 
-### Stabilne identyfikatory
+### Stable identifiers
 
-Dokumenty, przepisy, pytania i odpowiedzi używają stabilnych identyfikatorów
-tekstowych. Aktualizacja pakietu może dzięki temu zachować postęp przypisany do
-pytań, które nie zmieniły swojej tożsamości.
+Documents, provisions, questions, and answers use stable text identifiers. A
+package update can therefore retain progress for questions whose identity has
+not changed.
 
-### Płynny interfejs
+### Responsive interface
 
-Transfer, dekompresja, parsowanie i import wykonywane są poza głównym wątkiem.
-Stan operacji jest obserwowany przez Compose, dlatego użytkownik może zmienić
-zakładkę, gdy materiały nadal są przygotowywane.
+Transfers, decompression, parsing, and imports run outside the main thread.
+Compose observes the operation state, allowing the user to switch tabs while
+materials are still being prepared.
 
-## Jakość
+## Quality
 
-Projekt zawiera testy obejmujące m.in.:
+The project includes tests covering:
 
-- parser i walidację manifestu,
-- parser pakietów treści,
-- limit aktywnych materiałów dla typów kont,
-- harmonogram powtórek,
-- nawigację głównych zakładek,
-- gest przełączania pytania i źródła,
-- stany oraz odświeżanie panelu Materiały,
-- generator manifestu publikacyjnego.
+- Manifest parsing and validation
+- Content package parsing
+- Active-material limits for different account tiers
+- Review scheduling
+- Main-tab navigation
+- The gesture for switching between a question and its source
+- Materials-screen states and refresh behavior
+- Publication manifest generation
 
-Przed zatwierdzaniem zmian uruchamiane są testy jednostkowe, kompilacja aplikacji
-i testów instrumentacyjnych oraz Android Lint.
+Before changes are accepted, the project runs unit tests, application and
+instrumentation-test builds, and Android Lint.
 
-## Status projektu
+## Project status
 
-APPlikacja jest rozwijanym MVP. Aktualny przepływ obejmuje:
+APPlikacja is an actively developed MVP. The current flow includes:
 
-- rejestrację i logowanie,
-- pobieranie oraz zarządzanie materiałami,
-- lokalny import i naukę offline,
-- rolki pytań wraz ze źródłami,
-- zapisywanie postępu na urządzeniu.
+- Registration and sign-in
+- Downloading and managing study materials
+- Local imports and offline learning
+- A question feed with direct access to legal sources
+- On-device progress tracking
 
-W kolejnych etapach planowane są synchronizacja postępu między urządzeniami,
-pełny tryb egzaminacyjny, statystyki oraz bezpieczny proces obsługi kont Premium.
+Planned next steps include cross-device progress synchronization, a complete
+exam mode, statistics, and a secure Premium account workflow.
 
-## O projekcie
+## About the project
 
-APPlikację zaprojektowałem i rozwijam samodzielnie — od modelu produktu i
-interfejsu, przez aplikację Android oraz lokalną bazę, po pipeline przygotowania
-i dystrybucji treści.
+I designed and developed APPlikacja independently—from the product model and
+interface, through the Android app and local database, to the content
+preparation and distribution pipeline.
 
-Repozytorium jest prezentacją projektu i nie zawiera jego kodu źródłowego.
-Chętnie opowiem o implementacji, kompromisach architektonicznych i dalszym
-kierunku rozwoju podczas rozmowy technicznej.
-
-<!--
-Opcjonalnie dodaj:
-
-## Kontakt
-
-- LinkedIn: https://www.linkedin.com/in/TWOJ-PROFIL
-- GitHub: https://github.com/TWOJ-LOGIN
-- E-mail: twoj@email.pl
--->
+This repository is a project showcase and does not contain the source code. I
+would be happy to discuss the implementation, architectural trade-offs, and
+future direction in a technical interview.
 
 ---
 
-> APPlikacja jest narzędziem edukacyjnym i nie stanowi źródła porad prawnych.
+> APPlikacja is an educational tool and does not constitute legal advice.
